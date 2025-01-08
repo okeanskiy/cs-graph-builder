@@ -24,11 +24,6 @@ namespace Strazh
             optionCredentials.IsRequired = true;
             rootCommand.Add(optionCredentials);
 
-            var optionMode = new Option<string>("--tier", "optional flag as `project` or `code` or 'all' (default `all`) selected tier to scan in a codebase");
-            optionMode.AddAlias("-t");
-            optionMode.IsRequired = false;
-            rootCommand.Add(optionMode);
-
             var optionDelete = new Option<string>("--delete", "optional flag as `true` or `false` or no flag (default `true`) to delete data in graph before execution");
             optionDelete.AddAlias("-d");
             optionDelete.IsRequired = false;
@@ -44,11 +39,11 @@ namespace Strazh
             optionProjects.IsRequired = false;
             rootCommand.Add(optionProjects);
 
-            rootCommand.Handler = CommandHandler.Create<string, string, string, string, string[]>(BuildKnowledgeGraph);
+            rootCommand.Handler = CommandHandler.Create<string, string, string, string[]>(BuildKnowledgeGraph);
             await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task BuildKnowledgeGraph(string credentials, string tier, string delete, string solution, string[] projects)
+        private static async Task BuildKnowledgeGraph(string credentials, string delete, string solution, string[] projects)
         {
             try
             {
