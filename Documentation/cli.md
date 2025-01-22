@@ -6,8 +6,6 @@
 ### Options
 - **-c**, **--credentials** (REQUIRED)
 _required information in format `dbname:user:password` to connect to Neo4j Database_
-- **-t**, **--tier**
-_optional flag as `project` or `code` or 'all' (default `all`) selected tier to scan in a codebase_
 - **-d**, **--delete**
 _optional flag as `true` or `false` or no flag (default `true`) to delete data in graph before execution_
 - **-s**, **--solution** (REQUIRED)

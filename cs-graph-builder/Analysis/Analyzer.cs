@@ -58,7 +58,7 @@ namespace Strazh.Analysis
             
             for (var index = 0; index < projects.Count; index++)
             {
-                var triples = await AnalyzeProject(projects[index].Item1, projects[index].Item2, config.Tier);
+                var triples = await AnalyzeProject(projects[index].Item1, projects[index].Item2);
                 triples = triples.GroupBy(x => x.ToString()).Select(x => x.First()).OrderBy(x => x.NodeA.Label).ToList();
                 await DbManager.InsertData(triples, config.Credentials, config.IsDelete && index == 0);
             }
@@ -132,7 +132,7 @@ namespace Strazh.Analysis
             return sorted;
         }
 
-        private async Task<IList<Triple>> AnalyzeProject(Project project, IProjectAnalyzer projectAnalyzer, Tiers mode)
+        private async Task<IList<Triple>> AnalyzeProject(Project project, IProjectAnalyzer projectAnalyzer)
         {
             Console.WriteLine($"Project #{project.Name}:");
             var root = GetRoot(project.FilePath);
@@ -141,30 +141,27 @@ namespace Strazh.Analysis
             Console.WriteLine($"Analyzing {projectName} project...");
 
             var triples = new List<Triple>();
-            if (mode == Tiers.All || mode == Tiers.Project)
-            {
-                Console.WriteLine($"Analyzing Project tier...");
-                var projectBuild = projectAnalyzer.Build().FirstOrDefault();
-                var projectNode = new ProjectNode(projectName);
-                triples.Add(new TripleIncludedIn(projectNode, rootNode));
-                projectBuild.ProjectReferences.ToList().ForEach(x =>
-                {
-                    var node = new ProjectNode(GetProjectName(x));
-                    triples.Add(new TripleDependsOnProject(projectNode, node));
-                });
-                projectBuild.PackageReferences.ToList().ForEach(x =>
-                {
-                    var version = x.Value.Values.FirstOrDefault(x => x.Contains(".")) ?? "none";
-                    var node = new PackageNode(x.Key, x.Key, version);
-                    triples.Add(new TripleDependsOnPackage(projectNode, node));
-                });
-                Console.WriteLine($"Analyzing Project tier complete.");
-            }
 
-            if (project.SupportsCompilation
-                && (mode == Tiers.All || mode == Tiers.Code))
+            Console.WriteLine($"Analyzing Project...");
+            var projectBuild = projectAnalyzer.Build().FirstOrDefault();
+            var projectNode = new ProjectNode(projectName);
+            triples.Add(new TripleIncludedIn(projectNode, rootNode));
+            projectBuild.ProjectReferences.ToList().ForEach(x =>
             {
-                Console.WriteLine($"Analyzing Code tier...");
+                var node = new ProjectNode(GetProjectName(x));
+                triples.Add(new TripleDependsOnProject(projectNode, node));
+            });
+            projectBuild.PackageReferences.ToList().ForEach(x =>
+            {
+                var version = x.Value.Values.FirstOrDefault(x => x.Contains(".")) ?? "none";
+                var node = new PackageNode(x.Key, x.Key, version);
+                triples.Add(new TripleDependsOnPackage(projectNode, node));
+            });
+            Console.WriteLine($"Analyzing Project complete.");
+
+            if (project.SupportsCompilation)
+            {
+                Console.WriteLine($"Analyzing Code...");
                 var compilation = await project.GetCompilationAsync();
                 var syntaxTreeRoot = compilation.SyntaxTrees.Where(x => !x.FilePath.Contains("obj"));
                 foreach (var st in syntaxTreeRoot)
@@ -173,7 +170,9 @@ namespace Strazh.Analysis
                     await AnalyzeTree<InterfaceDeclarationSyntax>(triples, st, rootNode);
                     await AnalyzeTree<ClassDeclarationSyntax>(triples, st, rootNode);
                 }
-                Console.WriteLine($"Analyzing Code tier complete.");
+                Console.WriteLine($"Analyzing Code complete.");
+            } else {
+                Console.WriteLine($"Project does not support compilation.");
             }
 
             Console.WriteLine($"Analyzing {projectName} project complete.");

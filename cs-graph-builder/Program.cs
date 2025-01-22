@@ -49,7 +49,6 @@ namespace Strazh
             {
                 var config = new AnalyzerConfig(
                        credentials,
-                       tier,
                        delete,
                        solution,
                        projects
@@ -66,7 +65,7 @@ namespace Strazh
                     return;
                 }
 
-                Console.WriteLine($"Brewing a Code Knowledge Graph of tier \"{config.Tier}\".");
+                Console.WriteLine($"Brewing a Code Knowledge Graph.");
                 var analyser = new Analyzer();
                 await analyser.Analyze(config);
                 Console.WriteLine("Code Knowledge Graph created.");
